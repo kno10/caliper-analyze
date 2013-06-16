@@ -1,0 +1,73 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+	<modelVersion>4.0.0</modelVersion>
+
+	<groupId>com.googlecode.caliperanalyze</groupId>
+	<artifactId>caliper-analyze</artifactId>
+	<version>1.0-SNAPSHOT</version>
+	<packaging>jar</packaging>
+
+	<name>caliper-analyze</name>
+	<description>Project to analyze caliper microbenchmarking results.</description>
+	<url>http://maven.apache.org</url>
+
+	<licenses>
+		<license>
+			<name>GNU AGPL-3</name>
+			<url>http://www.gnu.org/licenses/agpl-3.0.txt</url>
+		</license>
+	</licenses>
+
+	<properties>
+		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+	</properties>
+
+	<dependencies>
+		<dependency>
+			<groupId>junit</groupId>
+			<artifactId>junit</artifactId>
+			<version>3.8.1</version>
+			<scope>test</scope>
+		</dependency>
+		<dependency>
+			<groupId>com.google.caliper</groupId>
+			<artifactId>caliper</artifactId>
+			<version>1.0-beta-1</version>
+		</dependency>
+		<dependency>
+			<groupId>org.hibernate</groupId>
+			<artifactId>hibernate-core</artifactId>
+			<version>3.6.7.Final</version>
+		</dependency>
+	</dependencies>
+
+	<build>
+		<plugins>
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-compiler-plugin</artifactId>
+				<version>3.0</version>
+				<configuration>
+					<source>1.7</source>
+					<target>1.7</target>
+				</configuration>
+			</plugin>
+			<plugin>
+				<groupId>org.codehaus.mojo</groupId>
+				<artifactId>appassembler-maven-plugin</artifactId>
+				<version>1.3</version>
+				<configuration>
+					<programs>
+						<program>
+							<mainClass>com.googlecode.caliperanalyze.SimpleReporter</mainClass>
+							<name>caliper-analyze</name>
+						</program>
+					</programs>
+					<platforms>
+						<platform>unix</platform>
+					</platforms>
+				</configuration>
+			</plugin>
+		</plugins>
+	</build>
+</project>
