@@ -11,3 +11,19 @@ single person for a few hours.
 
 This project will read the local result cache, and analyze the data it
 find there.
+
+== Building and running ==
+
+To build, use
+
+    mvn compile package install appassembler:assemble
+
+To run, use
+
+    sh target/appassembler/bin/caliper-analyze
+
+The current (early) version does not sort. The simplest is to sort yourself:
+
+    sh target/appassembler/bin/caliper-analyze | sort -d" " -n -k1,1 -k6n
+
+will sort by columns 1 to 1 (alphabetically), then 6-end (numerical)
