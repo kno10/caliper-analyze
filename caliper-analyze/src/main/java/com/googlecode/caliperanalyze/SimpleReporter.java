@@ -5,7 +5,9 @@ import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.HashSet;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -35,7 +37,7 @@ public class SimpleReporter {
     ArrayList<Trial> trials = readFiles(files);
 
     // Build a multimap of all benchmark parameters:
-    SetMultimap<String, String> spec = HashMultimap.create();
+    final SetMultimap<String, String> spec = HashMultimap.create();
     for(Trial t : trials) {
       // TODO: also use Host and VM parameters,
       // in case someone is benchmarking VMs!
@@ -51,8 +53,30 @@ public class SimpleReporter {
         variates.add(key);
       }
     }
+    // TODO: command line parameters for sorting.
+    sortHeurstically(spec, variates);
+    recursivelySummarize(trials, variates, spec, new ArrayList<String>());
+  }
+
+  private void sortHeurstically(final SetMultimap<String, String> spec, ArrayList<String> variates) {
     // TODO: heuristics for sorting. Number of entries?
-    recursivelySummarize(trials, variates, new ArrayList<String>());
+    Collections.sort(variates, new Comparator<String>() {
+      @Override
+      public int compare(String o1, String o2) {
+        int num1 = spec.get(o1).size();
+        int num2 = spec.get(o2).size();
+        if(num1 != num2) {
+          return Integer.compare(num1, num2);
+        }
+        if(Character.isDigit(o1.charAt(o1.length() - 1))) {
+          if(!Character.isDigit(o2.charAt(o2.length() - 1))) {
+            return -1;
+          }
+          return Integer.compare(o1.length(), o2.length());
+        }
+        return 0;
+      }
+    });
   }
 
   /**
@@ -121,39 +145,52 @@ public class SimpleReporter {
    * 
    * @param trials Trials to process
    * @param variates Variate names
+   * @param spec Parameter map
    * @param selected Current selection
    */
-  private void recursivelySummarize(Collection<Trial> trials, List<String> variates, List<String> selected) {
-    if(selected.size() == variates.size()) {
-      AggregateMeasurements agg = new AggregateMeasurements();
-      next: for(Trial t : trials) {
-        Map<String, String> pars = t.scenario().benchmarkSpec().parameters();
-        for(int i = 0; i < variates.size(); i++) {
-          if(!selected.get(i).equals(pars.get(variates.get(i)))) {
-            continue next;
-          }
-        }
-        agg.add(t.measurements());
+  private void recursivelySummarize(Collection<Trial> trials, List<String> variates, SetMultimap<String, String> spec, List<String> selected) {
+    final int depth = selected.size();
+    String curkey = variates.get(depth);
+    List<String> values = new ArrayList<String>(spec.get(curkey));
+    if(depth + 1 < variates.size()) {
+      Collections.sort(values); // Alphabetic.
+      for(String value : values) {
+        selected.add(value);
+        recursivelySummarize(trials, variates, spec, selected);
+        selected.remove(depth);
       }
+      return;
+    }
+    // Initialize:
+    final Map<String, AggregateMeasurements> aggs = new HashMap<String, AggregateMeasurements>();
+    for(String val : values) {
+      aggs.put(val, new AggregateMeasurements());
+    }
+    next: for(Trial t : trials) {
+      Map<String, String> pars = t.scenario().benchmarkSpec().parameters();
+      for(int i = 0; i < depth; i++) {
+        if(!selected.get(i).equals(pars.get(variates.get(i)))) {
+          continue next;
+        }
+      }
+      aggs.get(pars.get(curkey)).add(t.measurements());
+    }
+    Collections.sort(values, new Comparator<String>() {
+      @Override
+      public int compare(String o1, String o2) {
+        return Double.compare(aggs.get(o1).getMean(), aggs.get(o2).getMean());
+      }
+    });
+    for(String val : values) {
+      AggregateMeasurements agg = aggs.get(val);
       if(agg.getWeight() > 0) {
         for(String k : selected) {
           System.out.print(k);
           System.out.print(" ");
         }
+        System.out.print(val);
+        System.out.print(" ");
         System.out.println(agg);
-      }
-    }
-    else {
-      String nextkey = variates.get(selected.size());
-      Set<String> values = new HashSet<String>();
-      for(Trial t : trials) {
-        Map<String, String> pars = t.scenario().benchmarkSpec().parameters();
-        values.add(pars.get(nextkey));
-      }
-      for(String value : values) {
-        selected.add(value);
-        recursivelySummarize(trials, variates, selected);
-        selected.remove(selected.size() - 1);
       }
     }
   }
