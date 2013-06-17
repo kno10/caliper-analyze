@@ -69,15 +69,15 @@ public class AggregateMeasurements {
   public String toString() {
     StringBuilder buf = new StringBuilder();
     buf.append(description).append("[").append(unit).append("]: ");
-    buf.append("min: ").append(min);
-    buf.append(" ");
-    buf.append("max: ").append(min);
-    buf.append(" ");
     buf.append("mean: ").append(mean);
     if(weights > 1) {
       buf.append(" +- ").append(Math.sqrt(sqdev) / (weights - 1));
       buf.append(String.format(" (%.2f%%)", 100. * Math.sqrt(sqdev) / (weights - 1) / mean));
     }
+    buf.append(" ");
+    buf.append("min: ").append(min);
+    buf.append(" ");
+    buf.append("max: ").append(max);
     return buf.toString();
   }
 
