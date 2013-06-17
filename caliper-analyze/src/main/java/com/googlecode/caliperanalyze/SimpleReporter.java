@@ -15,7 +15,7 @@ import java.util.Set;
 import com.google.caliper.model.Trial;
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.SetMultimap;
-import com.google.gson.JsonSyntaxException;
+import com.google.gson.JsonParseException;
 import com.googlecode.caliperanalyze.util.CaliperConfigurationAdapter;
 import com.googlecode.caliperanalyze.util.FileUtil;
 
@@ -92,8 +92,8 @@ public class SimpleReporter {
       try {
         reader.readTrialsFromJSON(file, trials);
       }
-      catch(JsonSyntaxException e) {
-        if(e.getCause() instanceof EOFException) {
+      catch(JsonParseException e) {
+        if(e.getCause() instanceof EOFException || e.getMessage().contains("Unterminated string")) {
           // Pass - probably an incomplete run.
           System.err.println("Note: truncated file: " + file);
         }
