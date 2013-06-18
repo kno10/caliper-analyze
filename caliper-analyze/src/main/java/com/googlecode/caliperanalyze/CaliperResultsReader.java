@@ -49,6 +49,7 @@ public class CaliperResultsReader {
   public void readTrialsFromJSON(File file, Collection<Trial> output) throws IOException {
     InputStream in = new FileInputStream(file);
     JsonReader reader = new JsonReader(new InputStreamReader(in, "UTF-8"));
+    reader.setLenient(true);
     reader.beginArray();
     while(reader.hasNext()) {
       output.add(gson.<Trial> fromJson(reader, Trial.class));
