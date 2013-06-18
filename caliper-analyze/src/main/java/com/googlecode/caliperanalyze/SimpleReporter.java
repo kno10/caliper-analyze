@@ -8,6 +8,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -38,11 +39,20 @@ public class SimpleReporter {
 
     // Build a multimap of all benchmark parameters:
     final SetMultimap<String, String> spec = HashMultimap.create();
-    for(Trial t : trials) {
+    for(Iterator<Trial> iter = trials.iterator(); iter.hasNext();) {
+      Trial t = iter.next();
       // TODO: also use Host and VM parameters,
       // in case someone is benchmarking VMs!
-      for(Map.Entry<String, String> entry : t.scenario().benchmarkSpec().parameters().entrySet()) {
-        spec.get(entry.getKey()).add(entry.getValue());
+      // Any of these could be null on incomplete trials:
+      try {
+        for(Map.Entry<String, String> entry : t.scenario().benchmarkSpec().parameters().entrySet()) {
+          spec.get(entry.getKey()).add(entry.getValue());
+        }
+      }
+      catch(NullPointerException e) {
+        // We are indeed expecting this to happen sometimes.
+        iter.remove(); // Remove, so this doesn't happen again below.
+        continue;
       }
     }
     // Find variates:
