@@ -8,6 +8,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -58,9 +59,20 @@ public class SimpleReporter {
     // Find variates:
     Set<String> keys = spec.keySet();
     ArrayList<String> variates = new ArrayList<String>(keys.size());
+    Set<String> nonnumeric = new HashSet<String>(keys.size());
     for(String key : keys) {
-      if(spec.get(key).size() > 1) {
+      Set<String> values = spec.get(key);
+      if(values.size() > 1) {
         variates.add(key);
+        for(String v : values) {
+          try {
+            Double.parseDouble(v);
+          }
+          catch(NumberFormatException e) {
+            nonnumeric.add(key);
+            break;
+          }
+        }
       }
     }
     // TODO: command line parameters for sorting.
