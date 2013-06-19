@@ -51,8 +51,8 @@ public class AggregateMeasurements {
     else if(!description.equals(measurement.description())) {
       throw new RuntimeException("Multiple types of measuresments are not supported.");
     }
-    double val = measurement.value().magnitude();
     double weight = measurement.weight();
+    double val = measurement.value().magnitude() / weight;
     if(!Double.isNaN(val)) {
       min = (min < val) ? min : val;
       max = (max > val) ? max : val;
@@ -60,7 +60,7 @@ public class AggregateMeasurements {
       weights += weight;
       mean += delta * (weight / weights);
       // Online update squared deviations:
-      sqdev += delta * (val - mean);
+      sqdev += delta * (val - mean) * (weight / weights);
     }
     return this;
   }
