@@ -14,6 +14,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import com.google.caliper.model.Scenario;
 import com.google.caliper.model.Trial;
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.SetMultimap;
@@ -45,6 +46,8 @@ public class SimpleReporter {
       // TODO: also use Host and VM parameters,
       // in case someone is benchmarking VMs!
       // Any of these could be null on incomplete trials:
+      spec.get("BenchmarkMethod").add(t.scenario().benchmarkSpec().methodName());
+      spec.get("BenchmarkClass").add(t.scenario().benchmarkSpec().className());
       try {
         for(Map.Entry<String, String> entry : t.scenario().benchmarkSpec().parameters().entrySet()) {
           spec.get(entry.getKey()).add(entry.getValue());
@@ -189,13 +192,12 @@ public class SimpleReporter {
       aggs.put(val, new AggregateMeasurements());
     }
     next: for(Trial t : trials) {
-      Map<String, String> pars = t.scenario().benchmarkSpec().parameters();
       for(int i = 0; i < depth; i++) {
-        if(!selected.get(i).equals(pars.get(variates.get(i)))) {
+        if(!selected.get(i).equals(getScenarioParameter(t.scenario(), variates.get(i)))) {
           continue next;
         }
       }
-      aggs.get(pars.get(curkey)).add(t.measurements());
+      aggs.get(getScenarioParameter(t.scenario(), curkey)).add(t.measurements());
     }
     Collections.sort(values, new Comparator<String>() {
       @Override
@@ -215,6 +217,20 @@ public class SimpleReporter {
         System.out.println(agg);
       }
     }
+  }
+
+  private String getScenarioParameter(Scenario scenario, String key) {
+    String val = scenario.benchmarkSpec().parameters().get(key);
+    if(val != null) {
+      return val;
+    }
+    if("BenchmarkMethod".equals(key)) {
+      return scenario.benchmarkSpec().methodName();
+    }
+    if("BenchmarkCkass".equals(key)) {
+      return scenario.benchmarkSpec().className();
+    }
+    return null;
   }
 
   public static void main(String[] args) {
