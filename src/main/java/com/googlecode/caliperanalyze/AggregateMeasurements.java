@@ -61,7 +61,7 @@ public class AggregateMeasurements {
       sqweights += weight * weight;
       mean += delta * (weight / weights);
       // Online update squared deviations:
-      sqdev += delta * (val - mean) * (weight / weights);
+      sqdev += delta * (val - mean) * weight;
     }
     return this;
   }
