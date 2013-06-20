@@ -12,7 +12,7 @@ public class AggregateMeasurements {
   double min = Double.MAX_VALUE, max = Double.MIN_VALUE;
 
   /** Simple statistics (for online algorithm) */
-  double mean = 0.0, sqdev = 0.0, weights = 0.0;
+  double mean = 0.0, sqdev = 0.0, weights = 0.0, sqweights = 0.0;
 
   /** Metadata */
   String unit = null, description = null;
@@ -58,6 +58,7 @@ public class AggregateMeasurements {
       max = (max > val) ? max : val;
       double delta = val - mean;
       weights += weight;
+      sqweights += weight * weight;
       mean += delta * (weight / weights);
       // Online update squared deviations:
       sqdev += delta * (val - mean) * (weight / weights);
@@ -69,15 +70,12 @@ public class AggregateMeasurements {
   public String toString() {
     StringBuilder buf = new StringBuilder();
     buf.append(description).append("[").append(unit).append("]: ");
-    buf.append("mean: ").append(mean);
+    buf.append(String.format("mean: %.2f", mean));
     if(weights > 1) {
-      buf.append(" +- ").append(Math.sqrt(sqdev) / (weights - 1));
-      buf.append(String.format(" (%.2f%%)", 100. * Math.sqrt(sqdev) / (weights - 1) / mean));
+      buf.append(String.format(" +- %.2f", getStandardDeviation()));
+      buf.append(String.format(" (%.2f%%)", 100. * getStandardDeviation() / mean));
     }
-    buf.append(" ");
-    buf.append("min: ").append(min);
-    buf.append(" ");
-    buf.append("max: ").append(max);
+    buf.append(String.format(" min: %.2f max: %.2f", min, max));
     return buf.toString();
   }
 
@@ -114,8 +112,9 @@ public class AggregateMeasurements {
    * @return Standard deviation
    */
   public double getStandardDeviation() {
-    // Unbiased, assuming that the weights were counts:
-    return Math.sqrt(sqdev) / (weights - 1.);
+    // FIXME: is this numerically stable & accurate?
+    // FIXME: can we do the same update trick, and compute w*w-sqw directly?
+    return Math.sqrt(sqdev * weights / (weights * weights - sqweights));
   }
 
   /**
