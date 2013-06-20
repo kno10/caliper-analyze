@@ -75,7 +75,7 @@ public class AggregateMeasurements {
       buf.append(String.format(" +- %.2f", getStandardDeviation()));
       buf.append(String.format(" (%.2f%%)", 100. * getStandardDeviation() / mean));
     }
-    buf.append(String.format(" min: %.2f max: %.2f weight: %.f", min, max, weights));
+    buf.append(String.format(" min: %.2f max: %.2f weight: %.0f", min, max, weights));
     return buf.toString();
   }
 
