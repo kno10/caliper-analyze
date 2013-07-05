@@ -3,8 +3,17 @@ package com.googlecode.caliperanalyze.util;
 import org.ejml.data.DenseMatrix64F;
 import org.ejml.ops.CommonOps;
 
+/**
+ * Naive least squares fitting using matrix operations. Not very robust against
+ * outliers, although regularization can help a bit.
+ * 
+ * Not an iterative optimization algorithm, but the direct computation.
+ * 
+ * Not thoroughly tested, use at your own risk.
+ * 
+ * @author Erich Schubert
+ */
 public class LeastSquaresFit {
-
   /**
    * Thikonov regularized linear least squares, aka ridge regression.
    * 
@@ -37,5 +46,4 @@ public class LeastSquaresFit {
     CommonOps.mult(omat2, vec, res);
     return res;
   }
-
 }

@@ -3,6 +3,24 @@ package com.googlecode.caliperanalyze.util;
 import org.ejml.data.DenseMatrix64F;
 import org.ejml.ops.CommonOps;
 
+/**
+ * Non-negative least squares fitting.
+ * 
+ * Note: this implementation is not thoroughly tested. Some parameters such as
+ * the iteration limit and the tolerance are chosen arbitrarily for a single use
+ * case, and should probably either be estimated from the data or made a
+ * parameter.
+ * 
+ * But since this approach is not yet working as desired, why refine? Use at
+ * your own risk.
+ * 
+ * Implementation based on "Algorithm NNLS", page 161 of:
+ * 
+ * Lawson, Charles L., and Richard J. Hanson. Solving least squares problems.
+ * Vol. 161. Englewood Cliffs, NJ: Prentice-hall, 1974.
+ * 
+ * @author Erich Schubert
+ */
 public class NonNegativeLeastSquaresFit {
   /**
    * Solve min ||E x - f|| for x >= 0.
@@ -15,6 +33,11 @@ public class NonNegativeLeastSquaresFit {
    * {@code idx[i < act]} is the set P, {@code idx[i >= act]} is the set Z. EP
    * is stored in transposed form, and the rows are ordered according to idx, 0
    * columns are not used.
+   * 
+   * Implementation based on "Algorithm NNLS", page 161 of:
+   * 
+   * Lawson, Charles L., and Richard J. Hanson. Solving least squares problems.
+   * Vol. 161. Englewood Cliffs, NJ: Prentice-hall, 1974.
    * 
    * TODO: improve to use: R. Bro, S. D. Jong, A fast non-negativity-constrained
    * least squares algorithm, Journal of Chemometrics, Vol. 11, No. 5, p.
@@ -57,7 +80,6 @@ public class NonNegativeLeastSquaresFit {
 
     int iter = 0;
     while (act < dof) {
-      // System.err.println("Current x: " + format(xv));
       iter++;
       if (iter > maxiter) {
         System.err.println("Max iter hit.");
@@ -85,13 +107,11 @@ public class NonNegativeLeastSquaresFit {
         // Step 5: Swap maximum with first inactive:
         swap(idx, act, t);
         // Step 6 part 1: Copy active column to ET (as row; so previous rows can
-        // be
-        // kept; EJML matrixes are stored row-major order):
+        // be kept; EJML matrixes are stored row-major order):
         EPT.reshape(act + 1, EPT.numCols, true);
         for (int i = 0; i < EPT.numCols; i++) {
           EPT.unsafe_set(act, i, E.unsafe_get(i, idx[act]));
         }
-        // System.err.println("Activating " + idx[act] + " score: " + maxv);
         // We have a new active variable.
         act++;
       }
@@ -113,7 +133,6 @@ public class NonNegativeLeastSquaresFit {
         z.reshape(act, 1); // set size of s
         // Step 6: z is solution of reduced problem.
         CommonOps.mult(EPTEPinvEPT, f, z);
-        // System.err.println("Find neg: " + format(sv));
         // Step 7+8+9: Find any negative value; compute minimum alpha.
         int mini = -1;
         double alpha = Double.POSITIVE_INFINITY;
@@ -123,8 +142,6 @@ public class NonNegativeLeastSquaresFit {
             final double xi = xv[idx[i]];
             // Step 8/9: alpha
             final double alphai = xi / (xi - zi);
-            // System.err.println("i: " + i + " si: " + si + " alphai: " +
-            // alphai);
             if (alphai < alpha) {
               mini = i;
               alpha = alphai;
@@ -137,18 +154,13 @@ public class NonNegativeLeastSquaresFit {
         }
         // Step 10: Update x, in the active columns only
         // (the others will not be used anyway)
-        // System.err.println("Alpha: " + alpha + " mini: " + mini + " (" +
-        // idx[mini] + ")");
         for (int i = 0; i < act; i++) {
           xv[idx[i]] += alpha * (zv[i] - xv[idx[i]]);
         }
-        // System.err.println("Updated x: " + format(xv));
         // Step 11: deactivate all zero indices.
         for (int i = act - 1; i >= 0; i--) {
           final double xi = xv[idx[i]];
           if (Math.abs(xi) < tolerance) {
-            // System.err.println("Deactivating(" + i + ") " + idx[i] +
-            // " " + xi);
             act--;
             swapRows(EPT, i, act);
             swap(idx, i, act);
@@ -158,8 +170,6 @@ public class NonNegativeLeastSquaresFit {
             EPT.reshape(act, EPT.numCols, true);
           }
         }
-        // System.err.println("Active: " + act + " " + format(idx) + " " +
-        // format(sv));
       }
       // Step 7: x = z, in active dimensions, 0 in passive
       for (int i = 0; i < act; i++) {
@@ -174,38 +184,29 @@ public class NonNegativeLeastSquaresFit {
       }
     }
 
-    // System.err.println("Final x: " + format(xv));
     return x; // Step 12.
   }
 
-  static String format(double[] d) {
-    StringBuilder buf = new StringBuilder();
-    for (double v : d) {
-      if (buf.length() > 0) {
-        buf.append(',');
-      }
-      buf.append(v);
-    }
-    return buf.toString();
-  }
-
-  static String format(int[] d) {
-    StringBuilder buf = new StringBuilder();
-    for (int v : d) {
-      if (buf.length() > 0) {
-        buf.append(',');
-      }
-      buf.append(v);
-    }
-    return buf.toString();
-  }
-
+  /**
+   * Swap to entries in an integer array.
+   * 
+   * @param idx Integer array
+   * @param i Index to swap
+   * @param j Index to swap
+   */
   static void swap(int[] idx, int i, int j) {
     final int tmp = idx[i];
     idx[i] = idx[j];
     idx[j] = tmp;
   }
 
+  /**
+   * Swap to rows in a matrix.
+   * 
+   * @param A Matrix
+   * @param rowA Row number to swap
+   * @param rowB Row number to swap
+   */
   static void swapRows(DenseMatrix64F A, int rowA, int rowB) {
     int indexA = rowA * A.numCols;
     int indexB = rowB * A.numCols;
@@ -217,6 +218,11 @@ public class NonNegativeLeastSquaresFit {
     }
   }
 
+  /**
+   * Some debugging tests, comparing against a python implementation of the
+   * algorithm found on the web (which again apparently was benchmarked against
+   * matlab...)
+   */
   public static void main(String[] args) {
     DenseMatrix64F C = new DenseMatrix64F(new double[][] //
     { { 0.0372, 0.2869 },//
