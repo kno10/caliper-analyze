@@ -41,19 +41,18 @@ public class SimpleReporter {
 
     // Build a multimap of all benchmark parameters:
     final SetMultimap<String, String> spec = HashMultimap.create();
-    for(Iterator<Trial> iter = trials.iterator(); iter.hasNext();) {
+    for (Iterator<Trial> iter = trials.iterator(); iter.hasNext();) {
       Trial t = iter.next();
       // TODO: also use Host and VM parameters,
       // in case someone is benchmarking VMs!
       // Any of these could be null on incomplete trials:
-      spec.get("BenchmarkMethod").add(t.scenario().benchmarkSpec().methodName());
-      spec.get("BenchmarkClass").add(t.scenario().benchmarkSpec().className());
       try {
-        for(Map.Entry<String, String> entry : t.scenario().benchmarkSpec().parameters().entrySet()) {
+        spec.get("BenchmarkMethod").add(t.scenario().benchmarkSpec().methodName());
+        spec.get("BenchmarkClass").add(t.scenario().benchmarkSpec().className());
+        for (Map.Entry<String, String> entry : t.scenario().benchmarkSpec().parameters().entrySet()) {
           spec.get(entry.getKey()).add(entry.getValue());
         }
-      }
-      catch(NullPointerException e) {
+      } catch (NullPointerException e) {
         // We are indeed expecting this to happen sometimes.
         iter.remove(); // Remove, so this doesn't happen again below.
         continue;
@@ -63,15 +62,14 @@ public class SimpleReporter {
     Set<String> keys = spec.keySet();
     ArrayList<String> variates = new ArrayList<String>(keys.size());
     Set<String> nonnumeric = new HashSet<String>(keys.size());
-    for(String key : keys) {
+    for (String key : keys) {
       Set<String> values = spec.get(key);
-      if(values.size() > 1) {
+      if (values.size() > 1) {
         variates.add(key);
-        for(String v : values) {
+        for (String v : values) {
           try {
             Double.parseDouble(v);
-          }
-          catch(NumberFormatException e) {
+          } catch (NumberFormatException e) {
             nonnumeric.add(key);
             break;
           }
@@ -81,6 +79,19 @@ public class SimpleReporter {
     // TODO: command line parameters for sorting.
     sortHeurstically(spec, variates);
     recursivelySummarize(trials, variates, spec, new ArrayList<String>());
+
+    // Perform estimations:
+    for (String v : variates) {
+      if (nonnumeric.contains(v)) {
+        continue;
+      }
+      System.err.println("Predicting trend for " + v);
+      // Move target variate last:
+      ArrayList<String> modv = new ArrayList<>(variates);
+      modv.remove(v); // remove anywhere
+      modv.add(v); // add to end
+      predictTrend(trials, modv, spec, new ArrayList<String>());
+    }
   }
 
   private void sortHeurstically(final SetMultimap<String, String> spec, ArrayList<String> variates) {
@@ -90,11 +101,11 @@ public class SimpleReporter {
       public int compare(String o1, String o2) {
         int num1 = spec.get(o1).size();
         int num2 = spec.get(o2).size();
-        if(num1 != num2) {
+        if (num1 != num2) {
           return Integer.compare(num1, num2);
         }
-        if(Character.isDigit(o1.charAt(o1.length() - 1))) {
-          if(!Character.isDigit(o2.charAt(o2.length() - 1))) {
+        if (Character.isDigit(o1.charAt(o1.length() - 1))) {
+          if (!Character.isDigit(o2.charAt(o2.length() - 1))) {
             return -1;
           }
           return Integer.compare(o1.length(), o2.length());
@@ -113,21 +124,18 @@ public class SimpleReporter {
   private ArrayList<Trial> readFiles(File[] files) {
     CaliperResultsReader reader = new CaliperResultsReader();
     ArrayList<Trial> trials = new ArrayList<Trial>();
-    for(File file : files) {
+    for (File file : files) {
       try {
         reader.readTrialsFromJSON(file, trials);
-      }
-      catch(JsonParseException e) {
-        if(e.getCause() instanceof EOFException || e.getMessage().contains("Unterminated string")) {
+      } catch (JsonParseException e) {
+        if (e.getCause() instanceof EOFException || e.getMessage().contains("Unterminated string")) {
           // Pass - probably an incomplete run.
           System.err.println("Note: truncated file: " + file);
-        }
-        else {
+        } else {
           e.printStackTrace();
           System.exit(1);
         }
-      }
-      catch(IOException e) {
+      } catch (IOException e) {
         e.printStackTrace();
         System.exit(1);
       }
@@ -144,21 +152,19 @@ public class SimpleReporter {
   private File[] getFilenames(String[] args) {
     File[] files;
     // TODO: allow the -c flag for caliper configuration files.
-    if(args.length == 0) {
+    if (args.length == 0) {
       File resultdir = new CaliperConfigurationAdapter(null).getCaliperResultDir();
       files = new File[1];
       try {
         files[0] = FileUtil.findLatestFile(resultdir);
         System.out.println("Loading latest results file: " + files[0]);
-      }
-      catch(IOException e) {
+      } catch (IOException e) {
         e.printStackTrace();
         System.exit(1);
       }
-    }
-    else {
+    } else {
       files = new File[args.length];
-      for(int i = 0; i < args.length; i++) {
+      for (int i = 0; i < args.length; i++) {
         files[i] = new File(args[i]);
       }
     }
@@ -177,9 +183,9 @@ public class SimpleReporter {
     final int depth = selected.size();
     String curkey = variates.get(depth);
     List<String> values = new ArrayList<String>(spec.get(curkey));
-    if(depth + 1 < variates.size()) {
+    if (depth + 1 < variates.size()) {
       Collections.sort(values); // Alphabetic.
-      for(String value : values) {
+      for (String value : values) {
         selected.add(value);
         recursivelySummarize(trials, variates, spec, selected);
         selected.remove(depth);
@@ -188,12 +194,12 @@ public class SimpleReporter {
     }
     // Initialize:
     final Map<String, AggregateMeasurements> aggs = new HashMap<String, AggregateMeasurements>();
-    for(String val : values) {
+    for (String val : values) {
       aggs.put(val, new AggregateMeasurements());
     }
-    next: for(Trial t : trials) {
-      for(int i = 0; i < depth; i++) {
-        if(!selected.get(i).equals(getScenarioParameter(t.scenario(), variates.get(i)))) {
+    next: for (Trial t : trials) {
+      for (int i = 0; i < depth; i++) {
+        if (!selected.get(i).equals(getScenarioParameter(t.scenario(), variates.get(i)))) {
           continue next;
         }
       }
@@ -205,10 +211,10 @@ public class SimpleReporter {
         return Double.compare(aggs.get(o1).getMean(), aggs.get(o2).getMean());
       }
     });
-    for(String val : values) {
+    for (String val : values) {
       AggregateMeasurements agg = aggs.get(val);
-      if(agg.getWeight() > 0) {
-        for(String k : selected) {
+      if (agg.getWeight() > 0) {
+        for (String k : selected) {
           System.out.print(k);
           System.out.print(" ");
         }
@@ -219,15 +225,56 @@ public class SimpleReporter {
     }
   }
 
+  /**
+   * Recursively summarize the results.
+   * 
+   * @param trials Trials to process
+   * @param variates Variate names
+   * @param spec Parameter map
+   * @param selected Current selection
+   */
+  private void predictTrend(Collection<Trial> trials, List<String> variates, SetMultimap<String, String> spec, List<String> selected) {
+    final int depth = selected.size();
+    String curkey = variates.get(depth);
+    List<String> values = new ArrayList<String>(spec.get(curkey));
+    if (depth + 1 < variates.size()) {
+      Collections.sort(values); // Alphabetic.
+      for (String value : values) {
+        selected.add(value);
+        predictTrend(trials, variates, spec, selected);
+        selected.remove(depth);
+      }
+      return;
+    }
+    // Initialize:
+    TrendPredictor trend = new TrendPredictor();
+    next: for (Trial t : trials) {
+      for (int i = 0; i < depth; i++) {
+        if (!selected.get(i).equals(getScenarioParameter(t.scenario(), variates.get(i)))) {
+          continue next;
+        }
+      }
+      final String val = getScenarioParameter(t.scenario(), curkey);
+      trend.add(t.measurements(), Double.valueOf(val));
+    }
+    if (trend.getNumMeasurements() > 0) {
+      for (String k : selected) {
+        System.out.print(k);
+        System.out.print(" ");
+      }
+      System.out.println(trend);
+    }
+  }
+
   private String getScenarioParameter(Scenario scenario, String key) {
     String val = scenario.benchmarkSpec().parameters().get(key);
-    if(val != null) {
+    if (val != null) {
       return val;
     }
-    if("BenchmarkMethod".equals(key)) {
+    if ("BenchmarkMethod".equals(key)) {
       return scenario.benchmarkSpec().methodName();
     }
-    if("BenchmarkCkass".equals(key)) {
+    if ("BenchmarkCkass".equals(key)) {
       return scenario.benchmarkSpec().className();
     }
     return null;
