@@ -24,7 +24,7 @@ import com.googlecode.caliperanalyze.util.FileUtil;
 
 /**
  * TODO: Add logging
- * 
+ *
  * @author Erich Schubert
  */
 public class SimpleReporter {
@@ -85,7 +85,13 @@ public class SimpleReporter {
       if (nonnumeric.contains(v)) {
         continue;
       }
-      System.err.println("Predicting trend for " + v);
+      // Skip trend estimation for small number of samples for now
+      // Until we have a better rule to estimate when it is
+      // statistically sound to estimate a trend.
+      if (spec.get(v).size() < 8) {
+        continue;
+      }
+      System.out.println("Predicting trend for " + v);
       // Move target variate last:
       ArrayList<String> modv = new ArrayList<>(variates);
       modv.remove(v); // remove anywhere
