@@ -9,7 +9,7 @@ import com.google.caliper.model.Measurement;
  */
 public class AggregateMeasurements {
   /** Minimum and maximum */
-  double min = Double.MAX_VALUE, max = Double.MIN_VALUE;
+  double min = Double.POSITIVE_INFINITY, max = Double.NEGATIVE_INFINITY;
 
   /** Simple statistics (for online algorithm) */
   double mean = 0.0, sqdev = 0.0, weights = 0.0, sqweights = 0.0;
