@@ -1,4 +1,8 @@
-= Project description =
+*Important notice:* I have abandoned this project, as I am now using
+[JMH](http://openjdk.java.net/projects/code-tools/jmh/)
+for microbenchmarking instead of Caliper.
+
+# Project description
 
 This projects aims at providing a simple way of analzying
 [Caliper Microbenchmarking](https://code.google.com/p/caliper/) results.
@@ -12,7 +16,7 @@ single person for a few hours.
 This project will read the local result cache, and analyze the data it
 find there.
 
-== Building and running ==
+## Building and running
 
 To build, use
 
@@ -30,7 +34,7 @@ data yourself on the command line:
 
 will sort by columns 1 to 1 (alphabetically), then 6-end (numerical)
 
-== Tips & Tricks ==
+## Tips & Tricks
 
 caliper-analyze can actually merge multiple results. Just load multiple files
 on the command line, and it will treat them as one run (it is up to you to
@@ -43,7 +47,7 @@ The results *could* come from both micro and macrobenchmarks, but I havn't
 checked if this makes sense.
 There will likely be a mismatch in overhead for micro- and macro-benchmarks.
 
-== Future plans ==
+## Future plans
 
 I'm currently working on *trend estimation* for parameters. This works to some
 extend, but you probably need to perform a larger benchmark experiment, e.g.
